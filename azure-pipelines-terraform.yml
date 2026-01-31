@@ -25,7 +25,7 @@ stages:
         command: 'init'
         workingDirectory: 'terraform/dev'
         backendServiceAWS: 'aws-devops-connection'
-        backendAWSBucketName: 'devops-terraform-state-bucket'
+        backendAWSBucketName: 'devops-terraform-state-bucket1'
         backendAWSKey: 'eks/dev/terraform.tfstate'
         backendAWSRegion: 'eu-west-1'
 
