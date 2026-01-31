@@ -21,3 +21,8 @@ Thumbs.db
 .env
 *.pem
 *.key
+
+#
+.terraform/
+*.tfstate
+*.tfstate.backup
