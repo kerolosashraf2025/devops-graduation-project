@@ -1,36 +1,47 @@
 trigger:
 - main
 
-pool:
-  vmImage: ubuntu-latest
-
-variables:
-  TF_VERSION: '1.6.6'
-
 stages:
 - stage: Terraform
   displayName: Terraform Infrastructure
   jobs:
-  - job: TerraformJob
+  - job: Terraform
     displayName: Terraform Apply
-    steps:
+    pool:
+      vmImage: ubuntu-latest
 
+    steps:
     - checkout: self
 
     - task: TerraformInstaller@1
       displayName: Install Terraform
       inputs:
-        terraformVersion: $(TF_VERSION)
+        terraformVersion: '1.6.6'
 
-    - script: terraform --version
-      displayName: Verify Terraform
-
-    - script: |
-        cd terraform/dev
-        terraform init
+    - task: TerraformTaskV4@4
       displayName: Terraform Init
+      inputs:
+        provider: 'aws'
+        command: 'init'
+        workingDirectory: 'terraform/dev'
+        backendServiceAWS: 'aws-devops-connection'
+        backendAWSBucketName: 'devops-terraform-state-bucket'
+        backendAWSKey: 'eks/dev/terraform.tfstate'
+        backendAWSRegion: 'eu-west-1'
 
-    - script: |
-        cd terraform/dev
-        terraform plan
+    - task: TerraformTaskV4@4
       displayName: Terraform Plan
+      inputs:
+        provider: 'aws'
+        command: 'plan'
+        workingDirectory: 'terraform/dev'
+        environmentServiceNameAWS: 'aws-devops-connection'
+
+    - task: TerraformTaskV4@4
+      displayName: Terraform Apply
+      inputs:
+        provider: 'aws'
+        command: 'apply'
+        workingDirectory: 'terraform/dev'
+        environmentServiceNameAWS: 'aws-devops-connection'
+        commandOptions: '-auto-approve'
