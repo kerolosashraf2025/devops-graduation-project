@@ -6,42 +6,32 @@ stages:
   displayName: Terraform Infrastructure
   jobs:
   - job: Terraform
-    displayName: Terraform Apply
     pool:
       vmImage: ubuntu-latest
 
     steps:
     - checkout: self
 
-    - task: TerraformInstaller@1
+    - script: |
+        sudo apt-get update
+        sudo apt-get install -y wget unzip
+        wget https://releases.hashicorp.com/terraform/1.6.6/terraform_1.6.6_linux_amd64.zip
+        unzip terraform_1.6.6_linux_amd64.zip
+        sudo mv terraform /usr/local/bin/
       displayName: Install Terraform
-      inputs:
-        terraformVersion: '1.6.6'
 
-    - task: TerraformTaskV4@4
+    - script: |
+        terraform init \
+          -backend-config="bucket=devops-terraform-state-bucket1" \
+          -backend-config="key=eks/dev/terraform.tfstate" \
+          -backend-config="region=eu-west-1"
+      workingDirectory: terraform/dev
       displayName: Terraform Init
-      inputs:
-        provider: 'aws'
-        command: 'init'
-        workingDirectory: 'terraform/dev'
-        backendServiceAWS: 'aws-devops-connection'
-        backendAWSBucketName: 'devops-terraform-state-bucket1'
-        backendAWSKey: 'eks/dev/terraform.tfstate'
-        backendAWSRegion: 'eu-west-1'
 
-    - task: TerraformTaskV4@4
+    - script: terraform plan
+      workingDirectory: terraform/dev
       displayName: Terraform Plan
-      inputs:
-        provider: 'aws'
-        command: 'plan'
-        workingDirectory: 'terraform/dev'
-        environmentServiceNameAWS: 'aws-devops-connection'
 
-    - task: TerraformTaskV4@4
+    - script: terraform apply -auto-approve
+      workingDirectory: terraform/dev
       displayName: Terraform Apply
-      inputs:
-        provider: 'aws'
-        command: 'apply'
-        workingDirectory: 'terraform/dev'
-        environmentServiceNameAWS: 'aws-devops-connection'
-        commandOptions: '-auto-approve'
