@@ -1,0 +1,10 @@
+replicaCount: 1
+
+image:
+  repository: devops-backend
+  tag: local
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5000

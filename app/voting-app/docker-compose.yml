@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  vote:
+    image: vote:local
+    container_name: vote
+    ports:
+      - "5001:80"
+    depends_on:
+      - redis
+    networks:
+      - voting-net
+
+  result:
+    image: result:local
+    container_name: result
+    ports:
+      - "4000:5000"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URL=mongodb://mongo:27017
+    networks:
+      - voting-net
+
+  worker:
+    image: worker:local
+    container_name: worker
+    depends_on:
+      - redis
+      - mongo
+    environment:
+      - REDIS_HOST=redis
+      - MONGO_HOST=mongo
+    networks:
+      - voting-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    networks:
+      - voting-net
+
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    networks:
+      - voting-net
+
+networks:
+  voting-net:
+    driver: bridge
