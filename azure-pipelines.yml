@@ -2,11 +2,13 @@ trigger:
 - main
 
 variables:
-  IMAGE_TAG: $(Build.BuildId)
+- group: devops-global-vars
+- name: IMAGE_TAG
+  value: $(Build.BuildId)
 
 stages:
 - stage: Build
-  displayName: Build Docker Images
+  displayName: Build & Push Docker Images to Nexus
   jobs:
   - job: BuildImages
     displayName: Build Vote / Result / Worker
@@ -14,6 +16,9 @@ stages:
       vmImage: ubuntu-latest
 
     steps:
+    # -------------------------
+    # Install & Verify Docker
+    # -------------------------
     - task: DockerInstaller@0
       displayName: Install Docker
 
@@ -21,14 +26,34 @@ stages:
         docker version
       displayName: Verify Docker
 
+    # -------------------------
+    # Login to Nexus Docker Registry
+    # -------------------------
     - script: |
-        docker build -t vote:$(IMAGE_TAG) app/voting-app/vote
-      displayName: Build Vote Image
+        echo "$(NEXUS_PASSWORD)" | docker login $(DOCKER_REGISTRY) \
+          -u $(NEXUS_USERNAME) --password-stdin
+      displayName: Docker Login to Nexus
 
+    # -------------------------
+    # Build & Push Vote Image
+    # -------------------------
     - script: |
-        docker build -t result:$(IMAGE_TAG) app/voting-app/result
-      displayName: Build Result Image
+        docker build -t $(DOCKER_REGISTRY)/$(NEXUS_DOCKER_REPO)/$(VOTE_IMAGE):$(IMAGE_TAG) app/voting-app/vote
+        docker push $(DOCKER_REGISTRY)/$(NEXUS_DOCKER_REPO)/$(VOTE_IMAGE):$(IMAGE_TAG)
+      displayName: Build & Push Vote Image
 
+    # -------------------------
+    # Build & Push Result Image
+    # -------------------------
     - script: |
-        docker build -t worker:$(IMAGE_TAG) app/voting-app/worker
-      displayName: Build Worker Image
+        docker build -t $(DOCKER_REGISTRY)/$(NEXUS_DOCKER_REPO)/$(RESULT_IMAGE):$(IMAGE_TAG) app/voting-app/result
+        docker push $(DOCKER_REGISTRY)/$(NEXUS_DOCKER_REPO)/$(RESULT_IMAGE):$(IMAGE_TAG)
+      displayName: Build & Push Result Image
+
+    # -------------------------
+    # Build & Push Worker Image
+    # -------------------------
+    - script: |
+        docker build -t $(DOCKER_REGISTRY)/$(NEXUS_DOCKER_REPO)/$(WORKER_IMAGE):$(IMAGE_TAG) app/voting-app/worker
+        docker push $(DOCKER_REGISTRY)/$(NEXUS_DOCKER_REPO)/$(WORKER_IMAGE):$(IMAGE_TAG)
+      displayName: Build & Push Worker Image
