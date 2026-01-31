@@ -1,0 +1,34 @@
+trigger:
+- main
+
+variables:
+  IMAGE_TAG: $(Build.BuildId)
+
+stages:
+- stage: Build
+  displayName: Build Docker Images
+  jobs:
+  - job: BuildImages
+    displayName: Build Vote / Result / Worker
+    pool:
+      vmImage: ubuntu-latest
+
+    steps:
+    - task: DockerInstaller@0
+      displayName: Install Docker
+
+    - script: |
+        docker version
+      displayName: Verify Docker
+
+    - script: |
+        docker build -t vote:$(IMAGE_TAG) app/voting-app/vote
+      displayName: Build Vote Image
+
+    - script: |
+        docker build -t result:$(IMAGE_TAG) app/voting-app/result
+      displayName: Build Result Image
+
+    - script: |
+        docker build -t worker:$(IMAGE_TAG) app/voting-app/worker
+      displayName: Build Worker Image
