@@ -1,37 +1,24 @@
-trigger:
-- main
+trigger: none
+pr: none
 
-stages:
-- stage: Terraform
-  displayName: Terraform Infrastructure
-  jobs:
-  - job: Terraform
-    pool:
-      vmImage: ubuntu-latest
 
-    steps:
-    - checkout: self
+pool:
+  vmImage: ubuntu-latest
 
-    - script: |
-        sudo apt-get update
-        sudo apt-get install -y wget unzip
-        wget https://releases.hashicorp.com/terraform/1.6.6/terraform_1.6.6_linux_amd64.zip
-        unzip terraform_1.6.6_linux_amd64.zip
-        sudo mv terraform /usr/local/bin/
-      displayName: Install Terraform
+steps:
+  - checkout: self
+  - task: TerraformInstaller@1
+    inputs:
+      terraformVersion: 'latest'
 
-    - script: |
-        terraform init \
-          -backend-config="bucket=devops-terraform-state-bucket1" \
-          -backend-config="key=eks/dev/terraform.tfstate" \
-          -backend-config="region=eu-west-1"
-      workingDirectory: terraform/dev
-      displayName: Terraform Init
+  - task: TerraformCLI@1
+    inputs:
+      command: 'init'
+      workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+      allowTelemetryCollection: true
 
-    - script: terraform plan
-      workingDirectory: terraform/dev
-      displayName: Terraform Plan
-
-    - script: terraform apply -auto-approve
-      workingDirectory: terraform/dev
-      displayName: Terraform Apply
+  - task: TerraformCLI@1
+    inputs:
+      command: 'plan'
+      workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+      allowTelemetryCollection: true
